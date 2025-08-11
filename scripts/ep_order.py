@@ -1,6 +1,9 @@
 """order graph"""
 import os
 import pandas as pd
+import pandas.io.formats.format as _fmt
+pd.io.formats.string = _fmt
+
 import pickle
 
 from tqdm import tqdm
@@ -8,17 +11,30 @@ from tqdm import tqdm
 from fitness_landscape.analysis.epistasis import calculate_epistasis_walsh
 from fitness_landscape.core.sequence import BinarySequence
 
-## system parameters
-landscape_dir = "./data/nk_data/PTE/"
-n_sites = 6
+## system parameters #####
+landscape_dir = "./data/nk_data/Thermo/"
+n_sites = 12
 
-pte_df = pd.read_csv("./data/raw_data/PTE_2NH_ActvSite.csv")
-wt_seq = pte_df.sequence.tolist()[0]
+wt_seq = "KEVKAAELAAAKEAAKAELKALNLSEGQKDFYIKKINDAKTVEGVKALLEEALKLNDAKKEI"
+wt_marked = "KEVKAAELAAAKXXAXXELXXLNLSXXQXXFYIXKIXDAKTVEGVKALLEEALKLNDAKKEI"
+
+ordered_sites = [13, 14, 16, 17, 20, 21, 26, 27, 29, 30, 34, 37]
+for i, site in enumerate(wt_marked):
+    if site == "X":
+        ordered_sites.append(i)
+
+variable_site_ls = []
+for k in range(3, 13):
+    variable_site_ls.append(
+        [site - 1 for site in ordered_sites[:k]]
+    )
 wt_seq_modified = wt_seq
-ordered_sites = [254, 233, 272, 271, 313, 306, 308, 172,203, 174, 258, 130]
 for site in ordered_sites:
     wt_seq_modified = wt_seq_modified[:site -1] + "A" + wt_seq_modified[site:]
 
+
+save_name = "Thermo_order"
+#######
 
 result_dict = {
     "neighbourhood_scheme": [],
@@ -60,6 +76,7 @@ for item in tqdm(landscape_ls):
     # convert sequences in landscape into base sequences
     if not isinstance(loaded_data.sequences[0], BinarySequence):
         relevant_sites = ordered_sites[:n]
+        wt_seq = loaded_data.sequences[0].sequence
         binary_seq_ls = []
         for seq in loaded_data.sequences:
             # get binary sequence given WT
@@ -97,4 +114,4 @@ for item in tqdm(landscape_ls):
 
 # make csv
 df = pd.DataFrame(result_dict)
-df.to_csv(f'./data/results/PTE_order.csv', index=False)
+df.to_csv(f'./data/results/{save_name}.csv', index=False)

@@ -3,23 +3,23 @@ Generating GNK based on episatatic interactions in the PTE data.
 """
 import fitness_landscape
 
+import json
 import numpy as np
 import pandas as pd
 import pickle
 
-# # load pte data
-pte_df = pd.read_csv("./data/raw_data/PTE_2NH_ActvSite.csv")
-wt_seq = pte_df.sequence.tolist()[0]
+prot_sys = "thermo"
 
-# # load epistatic interactions
-# dist_arr = pd.read_csv("./results/structure_interaction/PTE_structure.csv").to_numpy()
+# load required information about system
+with open(f"./data/information/{prot_sys}_information.json", "r") as f:
+    info_file = json.load(f)
+wt_seq = info_file["wt"]
+ordered_sites = info_file["ordered_sites"]
+n_sites = info_file["n_sites"]
 
-# load thermobody data
-
-# wt_seq = "KEVKAAELAAAKEAAKAELKALNLSEGQKDFYIKKINDAKTVEGVKALLEEALKLNDAKKEI"
 
 # load distance matrix
-dist_arr = pd.read_csv("/Users/zhouxuanhui/Desktop/landscape_pro/results/structure_interaction/PTE_dis.csv").to_numpy()[:, 1:]
+dist_arr = pd.read_csv(f"./results/structure_interaction/{prot_sys}_dist.csv").to_numpy()
 
 # convert to adjacency matrix
 inter_arr = np.zeros_like(dist_arr)
@@ -27,48 +27,46 @@ inter_arr[dist_arr < 4.5] = 1
 np.fill_diagonal(inter_arr, 1)
 
 # make gnk landscape
-variable_sites = [233,254,271,272,306,313]
-variable_sites = [site - 1 for site in variable_sites]
-#variable_sites = [13, 14, 16, 17, 20, 21, 26, 27, 29, 30, 34, 37]
+variable_sites = [site - 1 for site in ordered_sites]
+variable_sites = variable_sites[:n_sites]
 
-
-
+# convert to binary form (A == WT, C == mutant)
 wt_seq_modified = wt_seq
 for site in variable_sites:
     wt_seq_modified = wt_seq_modified[:site -1] + "A" + wt_seq_modified[site:]
 
 gnk_landscape = fitness_landscape.models.create_gnk_landscape(
     N=len(variable_sites),
-    K=6,
+    K=len(variable_sites) - 1,
     alphabet=['A', 'C'],
     seed=0,
     base_sequence=list(wt_seq_modified),
     variable_sites = variable_sites,
     adj_mat=inter_arr
 )
-print()
+
  # save class
-with open(f'data/nk_data/PTE/PTE_structure_n6.pickle', 'wb') as f:
-            pickle.dump(gnk_landscape, f)
+with open(f'data/datasets/nk_data/{prot_sys}/{prot_sys}_structure_n{len(variable_sites)}.pickle', 'wb') as f:
+    pickle.dump(gnk_landscape, f)
 
-             # process results
+# process results
 gnk_seqs = gnk_landscape.sequences
-proseq = []
+pro_seq = []
 for seq_arr in gnk_seqs:
-            joint_seq = "".join(seq_arr.sequence)
-            proseq.append(joint_seq)
+    joint_seq = "".join(seq_arr.sequence)
+    pro_seq.append(joint_seq)
 
-gnk_fitness = gnk_landscape.fitness_layers[f"nk_k=6"]._replicates
-profitness = []
+gnk_fitness = gnk_landscape.fitness_layers[f"nk_k={len(variable_sites) - 1}"]._replicates
+pro_fitness = []
 
 for fitness in gnk_fitness:
-            fitness_val = fitness[0].item()
-            profitness.append(fitness_val)
+    fitness_val = fitness[0].item()
+    pro_fitness.append(fitness_val)
 
-        # make dataframe
-data = {'seq': proseq,
-                'fitness': profitness}
+# make dataframe
+data = {'seq': pro_seq,
+        'fitness': pro_fitness}
 
-        # save dataframe
+# save dataframe
 df = pd.DataFrame(data)
-df.to_csv(f'data/nk_data/PTE/PTE_structure_n6_sites.csv', index=False)
+df.to_csv(f'data/datasets/nk_data/{prot_sys}/{prot_sys}_structure_n{len(variable_sites)}.csv', index=False)

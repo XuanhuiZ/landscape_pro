@@ -1,5 +1,6 @@
-data/
+datasets/
 results/
+Icon?
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
