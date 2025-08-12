@@ -1,4 +1,4 @@
-"""calculating the rugguness"""
+"""calculating the ruggedness"""
 import json
 import os
 import pandas as pd
