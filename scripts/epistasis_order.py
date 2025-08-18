@@ -8,17 +8,18 @@ import pickle
 
 from tqdm import tqdm
 
-from fitness_landscape.analysis.epistasis import calculate_epistasis_walsh
 from fitness_landscape.core.sequence import BinarySequence
+from fitness_landscape.analysis.epistasis import calculate_epistasis_walsh
 
 ## system parameters #####
-landscape_dir = "./data/nk_data/Thermo/"
+landscape_dir = "./data/datasets/nk_data/Thermo/"
 n_sites = 12
 
 wt_seq = "KEVKAAELAAAKEAAKAELKALNLSEGQKDFYIKKINDAKTVEGVKALLEEALKLNDAKKEI"
 wt_marked = "KEVKAAELAAAKXXAXXELXXLNLSXXQXXFYIXKIXDAKTVEGVKALLEEALKLNDAKKEI"
 
 ordered_sites = [13, 14, 16, 17, 20, 21, 26, 27, 29, 30, 34, 37]
+ordered_pyidx_sites = [site -1 for site in ordered_sites]
 for i, site in enumerate(wt_marked):
     if site == "X":
         ordered_sites.append(i)
@@ -26,7 +27,7 @@ for i, site in enumerate(wt_marked):
 variable_site_ls = []
 for k in range(3, 13):
     variable_site_ls.append(
-        [site - 1 for site in ordered_sites[:k]]
+        [site -1 for site in ordered_sites[:k]]
     )
 wt_seq_modified = wt_seq
 for site in ordered_sites:
@@ -66,6 +67,7 @@ for item in tqdm(landscape_ls):
         k = int(item_elements[3][1:])
 
     else:
+        continue
         n = n_sites
         k = None
 
@@ -75,7 +77,7 @@ for item in tqdm(landscape_ls):
             
     # convert sequences in landscape into base sequences
     if not isinstance(loaded_data.sequences[0], BinarySequence):
-        relevant_sites = ordered_sites[:n]
+        relevant_sites = ordered_pyidx_sites[:n]
         wt_seq = loaded_data.sequences[0].sequence
         binary_seq_ls = []
         for seq in loaded_data.sequences:
@@ -97,6 +99,23 @@ for item in tqdm(landscape_ls):
         ## overwrite landscapes sequences with binary
         loaded_data.sequences = binary_seq_ls
 
+    if neighbourhood_scheme == "random":
+        # save binary sequences + fitness as CSV
+        binary_seq_fit = []
+        landscape_fitnesses = loaded_data.fitness_layers[f"nk_k={k}"]._replicates
+        
+        for fitness in landscape_fitnesses:
+            fitness_val = fitness[0].item()
+            binary_seq_fit.append(fitness_val)
+
+        # make dataframe
+        data = {'seq': binary_seq_ls,
+                'fitness': binary_seq_fit}
+        
+        # save dataframe
+        df = pd.DataFrame(data)
+        df.to_csv(f'data/synthetic/Thermo_syn_random_n{n_sites}_k{k}.sites.csv', index=False)
+        
     # get variance explained by orders
     order_res = calculate_epistasis_walsh(loaded_data, 
                                         order=n)
@@ -104,7 +123,7 @@ for item in tqdm(landscape_ls):
     # update results
     for order in range(1, 13):
         if order in order_res["variance_explained"]:
-            result_dict[f"{order}_order_variance_explained"].append(order_res["variance_explained"][order].item())
+            result_dict[f"{order}_order_variance_explained"].append(order_res["variance_explained"][order])
         else:
             result_dict[f"{order}_order_variance_explained"].append(None)
         
@@ -114,4 +133,4 @@ for item in tqdm(landscape_ls):
 
 # make csv
 df = pd.DataFrame(result_dict)
-df.to_csv(f'./data/results/{save_name}.csv', index=False)
+df.to_csv(f'./results/{save_name}.csv', index=False)

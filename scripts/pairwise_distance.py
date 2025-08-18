@@ -130,9 +130,9 @@ def calculate_distance_matrix(pdb_file, chain_id, res_list):
                         columns=[f"{chain_id}{r}" for r in res_list])
 
 
-pdb_path = "/Users/zhouxuanhui/Desktop/landscape_pro/data/PTE.pdb"
+pdb_path = "/Users/zhouxuanhui/Desktop/ML_ASC_code/landscape_pro/data/datasets/structures/T_IgA_complex.pdb"
 chain = "A"
-key_residues = [233, 254, 271, 272, 313, 306]
+key_residues = [13, 14, 16, 17, 20, 21, 26, 27, 29, 30, 34, 37]
 
 dist_df = calculate_distance_matrix(pdb_path, chain, key_residues)
-dist_df.to_csv("/Users/zhouxuanhui/Desktop/landscape_pro/data/PTE_dis.csv")
+dist_df.to_csv("/Users/zhouxuanhui/Desktop/ML_ASC_code/landscape_pro/results/structure_interaction/Thermo_dis.csv", index=False)

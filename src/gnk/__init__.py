@@ -1,0 +1,1 @@
+from gnk import epistatic_gnk, random_gnk, structural_gnk

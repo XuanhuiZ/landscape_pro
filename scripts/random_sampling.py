@@ -27,6 +27,9 @@ for item in tqdm(random_ls):
             continue
 
         df = pd.read_csv(landscape_dir + item)
+       
+
+
         #data storage
         data_storage = {
             "cycle": [],
@@ -36,14 +39,19 @@ for item in tqdm(random_ls):
         }
 
         for cycle in tqdm(range(args.running_cycle)):
+            #check length of the dataframe is big enough for batch size
+            df_len = len(df)
+            if df_len < batsize:
+                break
+
             # perform random search
             sample_row = df.sample(n=batsize, random_state= 10)
             drop_inx = sample_row.index
             df = df.drop(drop_inx)
 
             # extract data/results
-            sample_seq = sample_row["seq"]
-            sample_fitness = sample_row["fitness"]
+            sample_seq = sample_row["seq"].tolist()
+            sample_fitness = sample_row["fitness"].tolist()
             cycle_ls = [cycle + 1]*batsize
             max_fit_list = [max(sample_fitness)]*batsize
 

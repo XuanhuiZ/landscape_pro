@@ -1,5 +1,17 @@
 {
     "ordered_sites": [13, 14, 16, 17, 20, 21, 26, 27, 29, 30, 34, 37],
     "wt": "KEVKAAELAAAKEAAKAELKALNLSEGQKDFYIKKINDAKTVEGVKALLEEALKLNDAKKEI",
-    "n_sites": 12
+    "n_sites": 12,
+    "mutations": ["E13X",
+        "A14X",
+        "K16X",
+        "A17X",
+        "K20X",
+        "A21X",
+        "E26X",
+        "G27X",
+        "K29X",
+        "D30X",
+        "K34X",
+        "N37X"]
 }
