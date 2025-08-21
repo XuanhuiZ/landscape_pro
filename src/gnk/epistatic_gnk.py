@@ -13,7 +13,15 @@ def make_epistatic_gnk(prot_sys: str,
                         seed: int,
                         output_dir: Path) -> None:
     """
-    
+    Generate a GNK binary fitness landscape using an epistasis-informed interaction matrix.
+    Parameters
+    ----------
+    prot_sys : str
+    Protein system name (used to locate input files).
+    seed : int
+    Random seed for reproducibility.
+    output_dir : Path
+    Directory where output files (.csv and .pickle) will be saved.
     """
     # load required information about system
     with open(f"./data/information/{prot_sys}_information.json", "r") as f:
@@ -47,10 +55,10 @@ def make_epistatic_gnk(prot_sys: str,
     df["full_seq"]=seq_ls
     
     # save dataframe
-    df.to_csv(output_dir / f'Epistatic_n{n_sites}_sites.csv',
+    df.to_csv(output_dir / f'{prot_sys}_epistatic_n{n_sites}_sites.csv',
                       index=False)
     # save class
-    with open(output_dir /f'Epistatic_n{n_sites}_sites.pickle', 'wb') as f:
+    with open(output_dir /f'{prot_sys}_epistatic_n{n_sites}_sites.pickle', 'wb') as f:
                 pickle.dump(nk_binary_landscape, f)
 
 

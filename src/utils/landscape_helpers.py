@@ -1,6 +1,7 @@
 from fitness_landscape import FitnessLandscape
 from fitness_landscape import BinarySequence
 import pandas as pd
+import numpy as np
 
 from typing import List
 
@@ -14,7 +15,10 @@ def to_df(landscape: FitnessLandscape,
     proseq = []
 
     for seq_arr in gnk_seqs:
-        joint_seq = "".join(list(seq_arr.sequence))
+        if isinstance(seq_arr, BinarySequence):
+            joint_seq = "".join([str(aa) for aa in seq_arr.sequence])
+        else:
+            joint_seq = "".join(seq_arr.sequence)
         proseq.append(joint_seq)
 
     gnk_fitness = landscape.fitness_layers[fitness_layer]._replicates
@@ -33,7 +37,6 @@ def to_df(landscape: FitnessLandscape,
     return df
     
 
-"""binary seq to full seq"""
 def binary_to_seq(binary_seqs: List[BinarySequence],
                   mutation_seq: List[str],
                   WT_seq: str,
@@ -42,7 +45,7 @@ def binary_to_seq(binary_seqs: List[BinarySequence],
     
     """
     # check seq len and mutations correspond
-    assert len(binary_seqs[0]) == len(mutation), \
+    assert len(binary_seqs[0]) == len(mutation_seq), \
         "Sequence length does not correspond to number of mutations provided"
 
     # extract mutation info
@@ -54,8 +57,9 @@ def binary_to_seq(binary_seqs: List[BinarySequence],
         mutation_tuples.append((aa_from, site, aa_to))
 
     # make sequences
-    full_seq= []
+    full_seq = []
     for seq in binary_seqs:
+        seq = [int(aa) for aa in seq.sequence]
         new_seq = WT_seq
         for idx, mutation in enumerate(mutation_tuples):
             # change wt seq with mutation
@@ -65,4 +69,14 @@ def binary_to_seq(binary_seqs: List[BinarySequence],
                 new_seq = new_seq[:change_site] + new_aa + new_seq[change_site + 1:]
         full_seq.append(new_seq)
 
-        return full_seq
+    return full_seq
+
+
+def pad_binary_ints(int_list: List[int]):
+    # Convert ints to strings
+    str_list = [str(i) for i in int_list]
+    # Find the maximum length
+    max_len = max(len(s) for s in str_list)
+    # Pad with leading zeros and convert to numpy arrays of ints
+    arrays = [np.array(list(s.zfill(max_len)), dtype=int) for s in str_list]
+    return arrays

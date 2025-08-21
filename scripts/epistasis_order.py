@@ -3,40 +3,24 @@ import os
 import pandas as pd
 import pandas.io.formats.format as _fmt
 pd.io.formats.string = _fmt
-
+from argparse import ArgumentParser
 import pickle
-
 from tqdm import tqdm
-
-from fitness_landscape.core.sequence import BinarySequence
 from fitness_landscape.analysis.epistasis import calculate_epistasis_walsh
 
-## system parameters #####
-landscape_dir = "./data/datasets/nk_data/Thermo/"
-n_sites = 12
+# get user supplied args
+parser = ArgumentParser()
+parser.add_argument("--landscape_dir", type = str, help="Path to folder containing pickled landscapes.")
+parser.add_argument("--n_sites", type= int, help= "Default number of variable sites.")
+parser.add_argument("--prot_sys", type= str, help= "Name of protein system.")
 
-wt_seq = "KEVKAAELAAAKEAAKAELKALNLSEGQKDFYIKKINDAKTVEGVKALLEEALKLNDAKKEI"
-wt_marked = "KEVKAAELAAAKXXAXXELXXLNLSXXQXXFYIXKIXDAKTVEGVKALLEEALKLNDAKKEI"
+args = parser.parse_args()
 
-ordered_sites = [13, 14, 16, 17, 20, 21, 26, 27, 29, 30, 34, 37]
-ordered_pyidx_sites = [site -1 for site in ordered_sites]
-for i, site in enumerate(wt_marked):
-    if site == "X":
-        ordered_sites.append(i)
+landscape_dir = args.landscape_dir
+n_sites = args.n_sites
+prot_sys = args.prot_sys
 
-variable_site_ls = []
-for k in range(3, 13):
-    variable_site_ls.append(
-        [site -1 for site in ordered_sites[:k]]
-    )
-wt_seq_modified = wt_seq
-for site in ordered_sites:
-    wt_seq_modified = wt_seq_modified[:site -1] + "A" + wt_seq_modified[site:]
-
-
-save_name = "Thermo_order"
-#######
-
+# Store results
 result_dict = {
     "neighbourhood_scheme": [],
     "N": [],
@@ -44,7 +28,6 @@ result_dict = {
 }
 for order in range(1, 13):
     result_dict[f"{order}_order_variance_explained"] = []
-
 
 landscape_ls = os.listdir(landscape_dir)
 
@@ -67,58 +50,16 @@ for item in tqdm(landscape_ls):
         k = int(item_elements[3][1:])
 
     else:
-        continue
         n = n_sites
         k = None
 
     # load premade landscape
     with open(landscape_dir + item + ".pickle", 'rb') as f:
         loaded_data = pickle.load(f)
-            
-    # convert sequences in landscape into base sequences
-    if not isinstance(loaded_data.sequences[0], BinarySequence):
-        relevant_sites = ordered_pyidx_sites[:n]
-        wt_seq = loaded_data.sequences[0].sequence
-        binary_seq_ls = []
-        for seq in loaded_data.sequences:
-            # get binary sequence given WT
-            binary_seq = []
-            seq_basenp = seq.sequence
-            for site in relevant_sites:
-                site_indicator = seq_basenp[site - 1]
-                if site_indicator == "A":
-                    binary_seq.append(0)
-                elif site_indicator == "C":
-                    binary_seq.append(1)
-                else:
-                    raise ValueError(f"Unexpected AA: {site_indicator} at site: {site}")
-            # make binary sequence class
-            binary_seq_object = BinarySequence(binary_seq)
-            binary_seq_ls.append(binary_seq_object)
-
-        ## overwrite landscapes sequences with binary
-        loaded_data.sequences = binary_seq_ls
-
-    if neighbourhood_scheme == "random":
-        # save binary sequences + fitness as CSV
-        binary_seq_fit = []
-        landscape_fitnesses = loaded_data.fitness_layers[f"nk_k={k}"]._replicates
-        
-        for fitness in landscape_fitnesses:
-            fitness_val = fitness[0].item()
-            binary_seq_fit.append(fitness_val)
-
-        # make dataframe
-        data = {'seq': binary_seq_ls,
-                'fitness': binary_seq_fit}
-        
-        # save dataframe
-        df = pd.DataFrame(data)
-        df.to_csv(f'data/synthetic/Thermo_syn_random_n{n_sites}_k{k}.sites.csv', index=False)
         
     # get variance explained by orders
     order_res = calculate_epistasis_walsh(loaded_data, 
-                                        order=n)
+                                          order=n)
     
     # update results
     for order in range(1, 13):
@@ -133,4 +74,4 @@ for item in tqdm(landscape_ls):
 
 # make csv
 df = pd.DataFrame(result_dict)
-df.to_csv(f'./results/{save_name}.csv', index=False)
+df.to_csv(f'./results/epistasis_orders/{prot_sys}_epistatic_orders.csv', index=False)

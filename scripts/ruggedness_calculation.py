@@ -12,11 +12,6 @@ from fitness_landscape.analysis.graph import calculate_ruggedness_local_optima
 from fitness_landscape.analysis.random_walk import calculate_ruggedness_autocorrelation_analytical
 
 
-
-# landscape_dir = "./data/nk_data/PTE/"
-# n_sites = 6
-# output_name = "PTE_ruggedness"
-
 # get user supplied args
 parser = ArgumentParser()
 parser.add_argument("--landscape_dir", type = str, help="Path to folder containing pickled landscapes.")
@@ -61,7 +56,6 @@ for item in tqdm(landscape_ls):
     if neighbourhood_scheme == "random":
         n = int(item_elements[2][1:])
         k = int(item_elements[3][1:])
-
     else:
         n = n_sites
         k = None
@@ -96,8 +90,8 @@ for item in tqdm(landscape_ls):
 
 # make csv
 df = pd.DataFrame(result_dict)
-df.to_csv(f'./data/results/{output_name}.csv', index=False)
+df.to_csv(f'./results/ruggedness/{output_name}.csv', index=False)
 
 # save json
-with open(f"./data/results/{output_name}_autocorrelation.json", "w") as f:
+with open(f"./results/ruggedness/{output_name}_autocorrelation.json", "w") as f:
     json.dump(full_autocorrelation_res, f)
